@@ -5,24 +5,20 @@
 #ifndef DSPATCH_GROUND_H
 #define DSPATCH_GROUND_H
 
-#include <DSPatch.h>
+#include "IDispatchComponent.h"
 #include <iostream>
+
 typedef std::tuple<double, double> t_FlowData;
 
-class CGround : public DspComponent
-{
+class CGround : public IDispatchComponent {
 public:
-  CGround()
-  {
-    // add 1 output
-    AddOutput_("G1O");
+  CGround():IDispatchComponent() {
     mv_dfCurrent = 0.0;
   }
 
 protected:
 
-  virtual void Process_(DspSignalBus& inputs, DspSignalBus& output)
-  {
+  virtual void Process_(DspSignalBus &inputs, DspSignalBus &output) {
     // Update incoming current value, todo maybe not needed?
     t_FlowData inputValue;
     output.GetValue(0, inputValue);

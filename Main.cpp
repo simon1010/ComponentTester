@@ -7,46 +7,28 @@ using namespace std;
 
 int main()
 {
-  // 1. Create a DspCircuit where we can route our components
-  // ========================================================
   DspCircuit circuit;
 
-  // 2. Create instances of the components needed for our circuit
-  // ============================================================
   CStepSignalGenerator lv_StepGen;
-  CResistor lv_Resistor;
-  //CGround lv_Ground;
   CSignalLogger lv_Logger;
-    
-  // 3. Add component instances to circuit
-  // =====================================
+
+  for(int i = lv_StepGen.GetInputCount() - 1; i >= 0; --i) {
+    std::cout << lv_StepGen.GetInputName(i) << std::endl;
+    std::cout << lv_StepGen.GetOutputName(i) << std::endl;
+  }
+
   circuit.AddComponent(lv_StepGen, "StepGen");
-  //circuit.AddComponent(lv_Resistor, "Resistor");
-  //circuit.AddComponent(lv_Ground, "Ground");
-  //circuit.AddComponent(lv_Logger,  "logger" );
-    
-  // 4. Wire up the components inside the circuit
-  // ============================================
-  circuit.ConnectOutToOut(lv_StepGen , "StGen1O", "G1O");
-  //circuit.ConnectOutToIn(lv_Resistor, 0, lv_Logger  , 0);
-  //circuit.ConnectOutToOut(lv_Resistor, "R1O", "G1O");
+  circuit.AddComponent(lv_Logger,  "logger" );
 
-  // 5. Tick the circuit
-  // ===================
+  circuit.ConnectOutToIn(lv_StepGen, lv_StepGen.mc_sCurrent_OUT, lv_Logger, lv_Logger.mc_sCurrent_IN);
+  circuit.ConnectOutToIn(lv_StepGen, lv_StepGen.mc_sVoltage_OUT, lv_Logger, lv_Logger.mc_sVoltage_IN);
 
-  // Circuit tick method 1: Manual
   for (int i = 0; i < 20; i++)
   {
     circuit.Tick();
     circuit.Reset();
   }
 
-  // Press any key to quit
-  // getchar();
-
-  // 6. Clean up
-  // ===========
   DSPatch::Finalize();
-
-  return 0;
+  return EXIT_SUCCESS;
 }

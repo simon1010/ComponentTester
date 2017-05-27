@@ -1,41 +1,37 @@
 #pragma once
 
 #include <DSPatch.h>
+#include <iostream>
+#include <string>
+using namespace std;
 
 typedef std::tuple<double, double> t_FlowData;
 
-class IDispatchComponent : public DspComponent
-{
+class IDispatchComponent : public DspComponent {
 protected:
-  virtual const  char * mf_DerivedGetCompID() = 0;
   IDispatchComponent();
+  const string mc_sCompID;
   static int sv_nCompNr;
 
-private:
-  const char * mf_getCompId()
-  {
-    return mf_DerivedGetCompID();
-  }
+  // convenience
+public:
+  const string mc_sCurrent_IN;
+  const string mc_sCurrent_OUT;
+  const string mc_sVoltage_IN;
+  const string mc_sVoltage_OUT;
 };
 
 int IDispatchComponent::sv_nCompNr = 0;
 
 IDispatchComponent::IDispatchComponent()
+        : mc_sCompID([]{sv_nCompNr++;return std::to_string(sv_nCompNr);}())
+        , mc_sCurrent_IN ([this]{return mc_sCompID + "II";}())
+        , mc_sCurrent_OUT([this]{return mc_sCompID + "IO";}())
+        , mc_sVoltage_IN ([this]{return mc_sCompID + "UI";}())
+        , mc_sVoltage_OUT([this]{return mc_sCompID + "UO";}())
 {
-  sv_nCompNr++;
-
-  const char * lv_szCompUniqueId = mf_getCompId();
-  char lv_StringID[6];
-  strcat_s(&lv_StringID[0], 6, lv_szCompUniqueId);
-  strcat_s(&lv_StringID[3], 6,"UI");
-  AddInput_(lv_StringID);
-  
-  strcat_s(&lv_StringID[3], 6,"II");
-  AddInput_(lv_StringID);
-
-  strcat_s(&lv_StringID[3], 6,"UO");
-  AddOutput_(lv_StringID);
-
-  strcat_s(&lv_StringID[3], 6,"IO");
-  AddOutput_(lv_StringID);
+  AddInput_ (mc_sCurrent_IN ); // Current in
+  AddInput_ (mc_sVoltage_IN); // Voltage in
+  AddOutput_(mc_sCurrent_OUT ); // Current source
+  AddOutput_(mc_sVoltage_OUT); // Voltage source
 }

@@ -14,13 +14,8 @@ public:
 
 protected:
 
-  virtual const char * mf_DerivedGetCompID() override
-  {
-    return "R1";
-  }
-
-    // TODO: Think of equivalent upstream resistance!
-  virtual void Process_(DspSignalBus& inputs, DspSignalBus& output)
+  // TODO: Think of equivalent upstream resistance!
+  virtual void Process_(DspSignalBus& inputs, DspSignalBus& output) override
   {
     // Get data from both sides
     t_FlowData lv_Inp, lv_Out;

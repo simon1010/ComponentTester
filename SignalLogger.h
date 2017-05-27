@@ -2,28 +2,21 @@
 #include <iostream>
 #include <tuple>
 
-class CSignalLogger : public IDispatchComponent
-{
+class CSignalLogger : public IDispatchComponent {
 public:
-  CSignalLogger()
-  {
+  CSignalLogger() {
   }
 
 protected:
 
-  virtual const char * mf_DerivedGetCompID() override
-  {
-    return "Lo1";
-  }
-
-  virtual void Process_(DspSignalBus& inputs, DspSignalBus&)
-  {
+  virtual void Process_(DspSignalBus &inputs, DspSignalBus &) {
     // create a local stack variable to hold input value
-    //t_FlowData inputValue;
+    double CurrentIN;
+    double VoltageIN;
 
     // get the value from inputs bus and print it
-    //inputs.GetValue(0, inputValue);
-    //std::cout << "I: " << std::get<0>(inputValue) << " U: " << std::get<1>(inputValue) << std::endl;
-
+    inputs.GetValue(mc_sCurrent_IN, CurrentIN);
+    inputs.GetValue(mc_sVoltage_IN, VoltageIN);
+    std::cout << "I: " << CurrentIN << " U: " << VoltageIN << std::endl;
   }
 };
