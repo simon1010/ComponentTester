@@ -18,10 +18,12 @@ public:
 protected:
   virtual void Process_(DspSignalBus &inputs, DspSignalBus &outputs) {
     if (mf_bOutputHigh()) {
+      std::cout << "generating: " << mc_dfHighVoltage << " V" << std::endl;
       outputs.SetValue(mv_Ports[0].mv_sVoltage_OUT, mc_dfHighVoltage); // TODO configure step value
       outputs.SetValue(mv_Ports[0].mv_sCurrent_OUT, std::numeric_limits<double>::max()); // TODO based on current in
     }
     else {
+      std::cout << "generating: " << 0.0 << " V" << std::endl;
       outputs.SetValue(mv_Ports[0].mv_sVoltage_OUT, 0.0);
       outputs.SetValue(mv_Ports[0].mv_sCurrent_OUT, 0.0);
     }

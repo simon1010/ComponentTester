@@ -8,8 +8,6 @@
 #include "IDispatchComponent.h"
 #include <iostream>
 
-typedef std::tuple<double, double> t_FlowData;
-
 class CGround : public IDispatchComponent {
 public:
   CGround() {
@@ -19,12 +17,19 @@ public:
 protected:
 
   virtual void Process_(DspSignalBus &inputs, DspSignalBus &output) {
+    double lv_dfCurrent;
+    if(inputs.GetValue(mv_Ports[0].mv_sCurrent_IN, lv_dfCurrent))
+    {
+      mv_dfCurrent = lv_dfCurrent;
+    }
 
+    output.SetValue(mv_Ports[0].mv_sVoltage_OUT, 0.0);
+
+    std::cout << "Current flowing to ground : " << mv_dfCurrent << std::endl;
   }
 
 private:
   double mv_dfCurrent;
 };
-
 
 #endif //DSPATCH_GROUND_H
