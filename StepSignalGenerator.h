@@ -11,19 +11,19 @@
 
 class CStepSignalGenerator : public IDispatchComponent {
 public:
-  CStepSignalGenerator() {
+  CStepSignalGenerator(const double ac_dfHighVoltage = 5.0):mc_dfHighVoltage(ac_dfHighVoltage) {
     mv_nCounter = 10; // TODO make configurable, depending on time maybe?
   }
 
 protected:
   virtual void Process_(DspSignalBus &inputs, DspSignalBus &outputs) {
     if (mf_bOutputHigh()) {
-      outputs.SetValue(mc_sVoltage_OUT, 5.0); // TODO configure step value
-      outputs.SetValue(mc_sCurrent_OUT, std::numeric_limits<double>::max()); // TODO based on current in
+      outputs.SetValue(mv_Ports[0].mv_sVoltage_OUT, mc_dfHighVoltage); // TODO configure step value
+      outputs.SetValue(mv_Ports[0].mv_sCurrent_OUT, std::numeric_limits<double>::max()); // TODO based on current in
     }
     else {
-      outputs.SetValue(mc_sVoltage_OUT, 0.0);
-      outputs.SetValue(mc_sCurrent_OUT, 0.0);
+      outputs.SetValue(mv_Ports[0].mv_sVoltage_OUT, 0.0);
+      outputs.SetValue(mv_Ports[0].mv_sCurrent_OUT, 0.0);
     }
   }
 
@@ -38,6 +38,7 @@ private:
 
   // The number of ticks to wait untill trigger, todo? triggered step?  
   int mv_nCounter;
+  const double mc_dfHighVoltage;
 };
 
 #ifdef max
