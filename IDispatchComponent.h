@@ -3,6 +3,13 @@
 #include <DSPatch.h>
 #include <iostream>
 #include <string>
+
+#ifdef max
+#undef max
+#endif // max
+
+#include <limits>
+
 using namespace std;
 
 struct Port

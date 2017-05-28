@@ -11,7 +11,7 @@
 class CGround : public IDispatchComponent {
 public:
   CGround() {
-    mv_dfCurrent = 0.0;
+    mv_dfCurrent = NAN;
   }
 
 protected:
@@ -24,6 +24,7 @@ protected:
     }
 
     output.SetValue(mv_Ports[0].mv_sVoltage_OUT, 0.0);
+    output.SetValue(mv_Ports[0].mv_sCurrent_OUT, mv_dfCurrent);
 
     std::cout << "Current flowing to ground : " << mv_dfCurrent << std::endl;
   }
