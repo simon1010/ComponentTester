@@ -24,19 +24,23 @@ int main()
   CResistor            lv_Resistor;
   CResistor            lv_Resistor2;
   CResistor            lv_Resistor3;
+  CResistor            lv_Resistor4;
   CGround              lv_Ground;
 
   circuit.AddComponent(lv_StepGen  , "StepGen"   );
+  circuit.AddComponent(lv_Ground   , "Ground"    );
 //circuit.AddComponent(lv_Logger   , "Logger"    );
   circuit.AddComponent(lv_Resistor , "Resistor"  );
   circuit.AddComponent(lv_Resistor2, "Resistor2" );
   circuit.AddComponent(lv_Resistor3, "Resistor3" );
-  circuit.AddComponent(lv_Ground   , "Ground"    );
+  circuit.AddComponent(lv_Resistor4, "Resistor4" );
+
 
   PortConnect(circuit, lv_StepGen  , 0, lv_Resistor , 0);
   PortConnect(circuit, lv_Resistor , 1, lv_Resistor2, 0);
   PortConnect(circuit, lv_Resistor2, 1, lv_Resistor3, 0);
-  PortConnect(circuit, lv_Resistor3, 1, lv_Ground   , 0);
+  PortConnect(circuit, lv_Resistor3, 1, lv_Resistor4, 0);
+  PortConnect(circuit, lv_Resistor4, 1, lv_Ground   , 0);
 
   for (int i = 0; i < 20; i++)
   {

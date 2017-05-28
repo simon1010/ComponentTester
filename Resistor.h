@@ -57,12 +57,12 @@ protected:
     }
 
     // we don't do it the opposite way around so we don't create a race-condition
-    if(!isnan(lv_P0_VoltageIn))
+    /*if(!isnan(lv_P0_VoltageIn))
     {
       outputs.SetValue(mv_Ports[1].mv_sVoltage_OUT, lv_P0_VoltageIn);
       outputs.SetValue(mv_Ports[1].mv_sCurrent_OUT, mv_dfCurrent);
       return;
-    }
+    }*/
 
     if(!isnan(lv_P1_VoltageIn))
     {
@@ -88,7 +88,7 @@ const double CResistor::mf_ComputeVoltageDrop(const double &ac_dfCurrent, const 
   const double lc_dfAdjustedCurrent = (lc_dfDividerVoltage / mv_dfResistance);
 
   // only update the output voltage if the current is different in the downstream
-  if (ac_dfCurrent != mv_dfCurrent) {
+  if (ac_dfCurrent != mv_dfCurrent && lc_dfAdjustedCurrent != mv_dfCurrent) {
     // Update the current
     mv_dfCurrent = lc_dfAdjustedCurrent;
     return lc_dfDividerVoltage;
