@@ -3,6 +3,7 @@
 #include <DSPatch.h>
 #include <iostream>
 #include <string>
+#include <cmath>
 
 #ifdef max
 #undef max

@@ -2,7 +2,7 @@
 
 #include "IDispatchComponent.h"
 #include <tuple>
-#include <cmath>
+
 
 class CResistor : public IDispatchComponent {
   static const int sc_nPortsNo = 2;
@@ -34,6 +34,8 @@ protected:
       outputs.SetValue(mv_Ports[1].mv_sVoltage_OUT, lc_dfVoltageDrop);
       outputs.SetValue(mv_Ports[1].mv_sCurrent_OUT, mv_dfCurrent);
       mv_dfVoltageAcrossResistor = lc_dfVoltageDrop;
+      // TODO: single direction for publishing and single direction for updating parameters
+      mv_bFlowFrom0to1 = true;
       return;
     }
     else if (!isnan(lv_P1_CurrentIn) && !isnan(lv_P1_VoltageIn)) {
@@ -41,6 +43,7 @@ protected:
       outputs.SetValue(mv_Ports[0].mv_sVoltage_OUT, lc_dfVoltageDrop);
       outputs.SetValue(mv_Ports[0].mv_sCurrent_OUT, mv_dfCurrent);
       mv_dfVoltageAcrossResistor = lc_dfVoltageDrop;
+      mv_bFlowFrom0to1 = false;
       return;
     }
 
@@ -78,6 +81,7 @@ private:
   double mv_dfVoltageAcrossResistor;
   double mv_dfCurrent;
   double mv_dfResistance;
+  bool mv_bFlowFrom0to1; // TODO: organicity, this will update the current correctly everywhere
 };
 
 const double CResistor::mf_ComputeVoltageDrop(const double &ac_dfCurrent, const double &ac_dfVoltage) {
