@@ -17,20 +17,25 @@ std::ofstream SweepLog;
 class CSweepGenerator : public IDispatchComponent {
 public:
   CSweepGenerator(
-          const double ac_dfAmplitude       = 5.0   // V
-          , const double ac_dfStartFreq     = 50.   // Hz
-          , const double ac_dfStopFreq      = 200. // Hz
+          const double ac_dfAmplitude = 5.0         // V
+          , const double ac_dfStartFreq = 50.       // Hz
+          , const double ac_dfStopFreq = 200.       // Hz
           , const double ac_dfSweepDuration = 2.)   // 2s
-          : mc_dfAmplitude    ( ac_dfAmplitude     )
-          , mc_dfStartFreq    ( ac_dfStartFreq     )//[ac_dfStartFreq    ](){return ac_dfStartFreq     * pow(10, 9);}()) // adjusted for ns
-          , mc_dfStopFreq     ( ac_dfStopFreq      )//[ac_dfStopFreq     ](){return ac_dfStopFreq      * pow(10, 9);}()) // adjusted for ns
-          , mc_dfSweepDuration( ac_dfSweepDuration )//[ac_dfSweepDuration](){return ac_dfSweepDuration * pow(10, 9);}()) // ns
+          : mc_dfAmplitude(ac_dfAmplitude), mc_dfStartFreq(
+          ac_dfStartFreq)//[ac_dfStartFreq    ](){return ac_dfStartFreq     * pow(10, 9);}()) // adjusted for ns
+          , mc_dfStopFreq(
+                  ac_dfStopFreq)//[ac_dfStopFreq     ](){return ac_dfStopFreq      * pow(10, 9);}()) // adjusted for ns
+          , mc_dfSweepDuration(
+                  ac_dfSweepDuration)//[ac_dfSweepDuration](){return ac_dfSweepDuration * pow(10, 9);}()) // ns
+          , mc_nNumberOfPoints([&ac_dfSweepDuration, &ac_dfStopFreq]() {
+            return ac_dfSweepDuration * 4 * ac_dfStopFreq;
+          }()) // * 2 because Shannon
   {
     SweepLog.open(sc_FileName, std::ios_base::out);
 
     mv_dfCurrentOut = NAN;
     mv_nIncrement = 1;
-
+    mv_bIncrement = true;
   }
 
 protected:
@@ -63,18 +68,24 @@ private:
   const double mc_dfStartFreq;
   const double mc_dfStopFreq;
   const double mc_dfSweepDuration;
+  const int mc_nNumberOfPoints;
   double mv_dfCurrentOut;
 
+  bool mv_bIncrement;
+
   double mf_dfGetSweep(const int64_t ac_nTickDuration) {
+    // Handle sweep up and then down smoothly
+    if (mv_bIncrement && mv_nCounter == mc_nNumberOfPoints) {
+      mv_bIncrement = false;
+      mv_nIncrement = -1;
+    } else if (!mv_bIncrement && mv_nCounter == 0){
+      mv_bIncrement = true;
+      mv_nIncrement = 1;
+    }
 
-    // Todo direction: mv_nIncrement : + - 1
+    mv_nCounter += mv_nIncrement;
 
-    if(mv_nCounter < 4000)
-      mv_nCounter++;
-    else
-      mv_nCounter = 0;
-
-    double delta = mv_nCounter/ (float)4000;
+    double delta = mv_nCounter / (float) mc_nNumberOfPoints;
     double t = mc_dfSweepDuration * delta;
 
     double phase = 2 * M_PI * t * (mc_dfStartFreq + (mc_dfStopFreq - mc_dfStartFreq) * delta / 2);
