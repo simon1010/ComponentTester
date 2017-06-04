@@ -21,18 +21,13 @@ public:
           , const double ac_dfStartFreq = 50.       // Hz
           , const double ac_dfStopFreq = 200.       // Hz
           , const double ac_dfSweepDuration = 2.)   // 2s
-          : mc_dfAmplitude(ac_dfAmplitude), mc_dfStartFreq(
-          ac_dfStartFreq)//[ac_dfStartFreq    ](){return ac_dfStartFreq     * pow(10, 9);}()) // adjusted for ns
-          , mc_dfStopFreq(
-                  ac_dfStopFreq)//[ac_dfStopFreq     ](){return ac_dfStopFreq      * pow(10, 9);}()) // adjusted for ns
-          , mc_dfSweepDuration(
-                  ac_dfSweepDuration)//[ac_dfSweepDuration](){return ac_dfSweepDuration * pow(10, 9);}()) // ns
-          , mc_nNumberOfPoints([&ac_dfSweepDuration, &ac_dfStopFreq]() {
-            return ac_dfSweepDuration * 4 * ac_dfStopFreq;
-          }()) // * 2 because Shannon
+          : mc_dfAmplitude    ( ac_dfAmplitude    )
+          , mc_dfStartFreq    ( ac_dfStartFreq    )
+          , mc_dfStopFreq     ( ac_dfStopFreq     )
+          , mc_dfSweepDuration( ac_dfSweepDuration)
   {
     SweepLog.open(sc_FileName, std::ios_base::out);
-
+    mv_tElapsedTime = 0;
     mv_dfCurrentOut = NAN;
     mv_nIncrement = 1;
     mv_bIncrement = true;
@@ -47,12 +42,9 @@ protected:
     if (lv_bHaveMaxCurrent && !isnan(lv_dfMaxCurrent)) {
       mv_dfCurrentOut = lv_dfMaxCurrent;
     }
-
     _super::Process_(inputs, outputs);
-    double lv_VoltageOut = mf_dfGetSweep(mv_nTickDuration);//mc_dfAmplitude * sin(mv_nCounter);
-    //mv_nCounter += mv_nIncrement;
+    double lv_VoltageOut = mf_dfGetSweep(mv_nTickDuration);
 
-    //std::cout << "generating: " << lv_VoltageOut << " V and " << mv_dfCurrentOut << " A" << std::endl;
     SweepLog << lv_VoltageOut /* << "," << mv_dfCurrentOut */ << std::endl;
 
     outputs.SetValue(mv_Ports[0].mv_sVoltage_OUT, lv_VoltageOut);
@@ -62,36 +54,33 @@ protected:
 private:
   typedef IDispatchComponent _super;
 
-  int mv_nIncrement;
-  int mv_nCounter;
   const double mc_dfAmplitude;
   const double mc_dfStartFreq;
   const double mc_dfStopFreq;
   const double mc_dfSweepDuration;
-  const int mc_nNumberOfPoints;
   double mv_dfCurrentOut;
-
   bool mv_bIncrement;
+  int mv_nIncrement;
+  double mv_tElapsedTime;
 
   double mf_dfGetSweep(const int64_t ac_nTickDuration) {
     // Handle sweep up and then down smoothly
-    if (mv_bIncrement && mv_nCounter == mc_nNumberOfPoints) {
+    if (mv_bIncrement && mv_tElapsedTime >= (mc_dfSweepDuration / 2)) {
       mv_bIncrement = false;
       mv_nIncrement = -1;
-    } else if (!mv_bIncrement && mv_nCounter == 0){
+    } else if (!mv_bIncrement && mv_tElapsedTime <= 0) {
       mv_bIncrement = true;
       mv_nIncrement = 1;
     }
 
-    mv_nCounter += mv_nIncrement;
-
-    double delta = mv_nCounter / (float) mc_nNumberOfPoints;
+    mv_tElapsedTime += ac_nTickDuration * pow(10, -9) * mv_nIncrement; // from ns to s => may produce rounding error
+    double delta = mv_tElapsedTime / mc_dfSweepDuration;
     double t = mc_dfSweepDuration * delta;
 
     double phase = 2 * M_PI * t * (mc_dfStartFreq + (mc_dfStopFreq - mc_dfStartFreq) * delta / 2);
-    while (phase > 2 * M_PI) phase = fmod(phase, (2 * M_PI)); // optional
-    //printf("%f %f %f", t, phase * 180 / M_PI, 3 * sin(phase));
+    while (phase > 2 * M_PI) phase = fmod(phase, (2 * M_PI));
 
     return mc_dfAmplitude * sin(phase);
   }
-};//
+};
+

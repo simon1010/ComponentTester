@@ -40,7 +40,7 @@ int main()
 
   // Must keep time-step less than 25,000.00 ns in order to obtain correct real-time audio processing for the entire human audio-range
 
-  for (int i = 0; i < 4000; i++)
+  for (int i = 0; i < 40000 * 3; i++) // about 2s
   {
     // TODO: Pass the Time to the Process methods in order to have a RT time step
     //std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();

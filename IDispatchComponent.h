@@ -29,7 +29,10 @@ protected:
   IDispatchComponent(const int ac_nPortCount = 1);
 
   virtual void Process_(DspSignalBus&, DspSignalBus&) override {
-    mv_nTickDuration = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - mv_LastTime).count();
+    if(!mv_bMaidenTrip) {
+      mv_bMaidenTrip = false;
+      mv_nTickDuration = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - mv_LastTime).count();
+    }
     mv_LastTime = std::chrono::steady_clock::now();
   }
 
@@ -37,6 +40,7 @@ protected:
   static int sv_nCompNr;
   int64_t mv_nTickDuration;
   std::chrono::steady_clock::time_point mv_LastTime;
+  bool mv_bMaidenTrip;
   // convenience
 public:
   t_Ports mv_Ports;
@@ -45,8 +49,9 @@ public:
 int IDispatchComponent::sv_nCompNr = 0;
 
 IDispatchComponent::IDispatchComponent(const int ac_nPortCount)
-        : mc_sCompID([]{sv_nCompNr++;return std::to_string(sv_nCompNr);}()), mv_nTickDuration(0)
+        : mc_sCompID([]{sv_nCompNr++;return std::to_string(sv_nCompNr);}()), mv_nTickDuration(NAN)
 {
+  mv_bMaidenTrip = true;
   mv_Ports.resize(ac_nPortCount);
 
   // Connection ID format: <ID>_<ConnectionType>_<PortNr> (E.g. 1_0_II, first component, port 0, Current input )
