@@ -4,8 +4,9 @@
 #include "Ground.h"
 #include "Resistor.h"
 #include "Capacitor.h"
+#include "SweepGenerator.h"
 #include <assert.h>
-#include <chrono>
+
 using namespace std;
 
 template <class fromComponent, class toComponent>
@@ -23,20 +24,19 @@ int main()
 
   CStepSignalGenerator lv_StepGen;
   CResistor            lv_Resistor;
-  //CResistor            lv_Resistor2;
   CGround              lv_Ground;
   CCapacitor           lv_Capacitor;
+  CSweepGenerator      lv_SweepGen;
 
-  circuit.AddComponent(lv_StepGen  , "StepGen"   );
+  //circuit.AddComponent(lv_StepGen  , "StepGen"   );
   circuit.AddComponent(lv_Ground   , "Ground"    );
   circuit.AddComponent(lv_Resistor , "Resistor"  );
-  //circuit.AddComponent(lv_Resistor2 , "Resistor2"  );
-  circuit.AddComponent(lv_Capacitor, "Capacitor" );
+  circuit.AddComponent(lv_SweepGen , "Sweep"     );
+  //circuit.AddComponent(lv_Capacitor, "Capacitor" );
 
-  PortConnect(circuit, lv_StepGen  , 0, lv_Resistor  , 0);
-  //PortConnect(circuit, lv_StepGen  , 0, lv_Resistor2 , 0);
-  PortConnect(circuit, lv_Resistor , 1, lv_Capacitor , 0);
-  PortConnect(circuit, lv_Capacitor, 1, lv_Ground    , 0);
+  PortConnect(circuit, lv_SweepGen , 0, lv_Resistor  , 0);
+  PortConnect(circuit, lv_Resistor , 1, lv_Ground    , 0);
+  //PortConnect(circuit, lv_Capacitor, 1, lv_Ground    , 0);
 
   // Must keep time-step less than 25,000.00 ns in order to obtain correct real-time audio processing for the entire human audio-range
 

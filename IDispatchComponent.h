@@ -10,6 +10,7 @@
 #endif // max
 
 #include <limits>
+#include <chrono>
 
 using namespace std;
 
@@ -27,9 +28,15 @@ class IDispatchComponent : public DspComponent {
 protected:
   IDispatchComponent(const int ac_nPortCount = 1);
 
+  virtual void Process_(DspSignalBus&, DspSignalBus&) override {
+    mv_nTickDuration = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - mv_LastTime).count();
+    mv_LastTime = std::chrono::steady_clock::now();
+  }
+
   const string mc_sCompID;
   static int sv_nCompNr;
-
+  int64_t mv_nTickDuration;
+  std::chrono::steady_clock::time_point mv_LastTime;
   // convenience
 public:
   t_Ports mv_Ports;
@@ -38,7 +45,7 @@ public:
 int IDispatchComponent::sv_nCompNr = 0;
 
 IDispatchComponent::IDispatchComponent(const int ac_nPortCount)
-        : mc_sCompID([]{sv_nCompNr++;return std::to_string(sv_nCompNr);}())
+        : mc_sCompID([]{sv_nCompNr++;return std::to_string(sv_nCompNr);}()), mv_nTickDuration(0)
 {
   mv_Ports.resize(ac_nPortCount);
 

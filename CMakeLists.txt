@@ -12,7 +12,7 @@ add_executable(
     ${PROJECT_NAME}
     ${srcs}
     ${hdrs}
-        Ground.cpp Ground.h Capacitor.h)
+        Ground.cpp Ground.h Capacitor.h SweepGenerator.h)
 
 target_link_libraries(
     ${PROJECT_NAME}
