@@ -22,7 +22,7 @@ int main()
 {
   DspCircuit circuit;
 
-  CStepSignalGenerator lv_StepGen;
+  //CStepSignalGenerator lv_StepGen;
   CResistor            lv_Resistor;
   CGround              lv_Ground;
   CCapacitor           lv_Capacitor;
@@ -32,15 +32,14 @@ int main()
   circuit.AddComponent(lv_Ground   , "Ground"    );
   circuit.AddComponent(lv_Resistor , "Resistor"  );
   circuit.AddComponent(lv_SweepGen , "Sweep"     );
-  //circuit.AddComponent(lv_Capacitor, "Capacitor" );
+  circuit.AddComponent(lv_Capacitor, "Capacitor" );
 
   PortConnect(circuit, lv_SweepGen , 0, lv_Resistor  , 0);
-  PortConnect(circuit, lv_Resistor , 1, lv_Ground    , 0);
-  //PortConnect(circuit, lv_Capacitor, 1, lv_Ground    , 0);
+  PortConnect(circuit, lv_Resistor , 1, lv_Capacitor , 0);
+  PortConnect(circuit, lv_Capacitor, 1, lv_Ground    , 0);
 
   // Must keep time-step less than 25,000.00 ns in order to obtain correct real-time audio processing for the entire human audio-range
-
-  for (int i = 0; i < 40000 * 3; i++) // about 2s
+  for (int i = 0; i < 40000 * 3; i++) // about 3s
   {
     // TODO: Pass the Time to the Process methods in order to have a RT time step
     //std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();

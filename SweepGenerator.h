@@ -9,10 +9,10 @@
 
 #include "IDispatchComponent.h"
 #include <cmath>
-#include <fstream>
+//#include <fstream>
 
-static const char *sc_FileName = "/Users/newuser/Documents/Programming/DSpatch/Logging/SweepLog.csv";
-std::ofstream SweepLog;
+//static const char *sc_FileName = "/Users/newuser/Documents/Programming/DSpatch/Logging/SweepLog.csv";
+//std::ofstream SweepLog;
 
 class CSweepGenerator : public IDispatchComponent {
 public:
@@ -26,7 +26,7 @@ public:
           , mc_dfStopFreq     ( ac_dfStopFreq     )
           , mc_dfSweepDuration( ac_dfSweepDuration)
   {
-    SweepLog.open(sc_FileName, std::ios_base::out);
+    //SweepLog.open(sc_FileName, std::ios_base::out);
     mv_tElapsedTime = 0;
     mv_dfCurrentOut = NAN;
     mv_nIncrement = 1;
@@ -45,7 +45,7 @@ protected:
     _super::Process_(inputs, outputs);
     double lv_VoltageOut = mf_dfGetSweep(mv_nTickDuration);
 
-    SweepLog << lv_VoltageOut /* << "," << mv_dfCurrentOut */ << std::endl;
+    //SweepLog << lv_VoltageOut /* << "," << mv_dfCurrentOut */ << std::endl;
 
     outputs.SetValue(mv_Ports[0].mv_sVoltage_OUT, lv_VoltageOut);
     outputs.SetValue(mv_Ports[0].mv_sCurrent_OUT, mv_dfCurrentOut);
