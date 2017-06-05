@@ -2,12 +2,17 @@
 
 #include "IDispatchComponent.h"
 #include <tuple>
+#include <fstream>
 
+static const char* sc_ResFileName = "/Users/newuser/Documents/Programming/DSpatch/Logging/ResistorLog.csv";
+std::ofstream ResLog;
 
 class CResistor : public IDispatchComponent {
   static const int sc_nPortsNo = 2;
 public:
   CResistor() : IDispatchComponent(sc_nPortsNo) {
+    ResLog.open(sc_ResFileName, std::ios_base::out);
+
     mv_dfResistance = 10.; // ohm
     mv_dfVoltageAcrossResistor = NAN;
     mv_dfCurrent = NAN;
@@ -34,8 +39,7 @@ protected:
       outputs.SetValue(mv_Ports[1].mv_sVoltage_OUT, lc_dfVoltageDrop);
       outputs.SetValue(mv_Ports[1].mv_sCurrent_OUT, mv_dfCurrent);
       mv_dfVoltageAcrossResistor = lc_dfVoltageDrop;
-      // TODO: single direction for publishing and single direction for updating parameters
-      mv_bFlowFrom0to1 = true;
+      ResLog << "P1," << lc_dfVoltageDrop << "," << mv_dfCurrent << std::endl;
       return;
     }
     else if (!isnan(lv_P1_CurrentIn) && !isnan(lv_P1_VoltageIn)) {
@@ -43,7 +47,7 @@ protected:
       outputs.SetValue(mv_Ports[0].mv_sVoltage_OUT, lc_dfVoltageDrop);
       outputs.SetValue(mv_Ports[0].mv_sCurrent_OUT, mv_dfCurrent);
       mv_dfVoltageAcrossResistor = lc_dfVoltageDrop;
-      mv_bFlowFrom0to1 = false;
+      ResLog << "P0," << lc_dfVoltageDrop << "," << mv_dfCurrent << std::endl;
       return;
     }
 
@@ -56,6 +60,8 @@ protected:
       outputs.SetValue(mv_Ports[1].mv_sVoltage_OUT, lc_dfVoltageDifference);
       outputs.SetValue(mv_Ports[1].mv_sCurrent_OUT, mv_dfCurrent);
       mv_dfVoltageAcrossResistor = lc_dfVoltageDifference;
+      ResLog << "P0," << lc_dfVoltageDifference << "," << mv_dfCurrent << std::endl;
+      ResLog << "P1," << lc_dfVoltageDifference << "," << mv_dfCurrent << std::endl;
       return;
     }
 
@@ -85,10 +91,12 @@ private:
 };
 
 const double CResistor::mf_ComputeVoltageDrop(const double &ac_dfCurrent, const double &ac_dfVoltage) {
-  const double lc_dfEquivResistance = ac_dfVoltage / ac_dfCurrent;
+  double lv_dfEquivResistance = 0.;
+  if(ac_dfCurrent != 0. && ac_dfVoltage != 0.)
+    lv_dfEquivResistance = ac_dfVoltage / ac_dfCurrent;
 
   // apply the voltage divider rule
-  const double lc_dfDividerVoltage = (ac_dfVoltage * mv_dfResistance) / (mv_dfResistance + lc_dfEquivResistance);
+  const double lc_dfDividerVoltage = (ac_dfVoltage * mv_dfResistance) / (mv_dfResistance + lv_dfEquivResistance);
   const double lc_dfAdjustedCurrent = (lc_dfDividerVoltage / mv_dfResistance);
 
   // only update the output voltage if the current is different in the downstream
@@ -98,6 +106,7 @@ const double CResistor::mf_ComputeVoltageDrop(const double &ac_dfCurrent, const 
     return lc_dfDividerVoltage;
   }
   else {
+    mv_dfCurrent = ac_dfVoltage/mv_dfResistance;
     return ac_dfVoltage;
   }
 }
