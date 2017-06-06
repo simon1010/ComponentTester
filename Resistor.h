@@ -13,7 +13,7 @@ public:
   CResistor() : IDispatchComponent(sc_nPortsNo) {
     ResLog.open(sc_ResFileName, std::ios_base::out);
 
-    mv_dfResistance = 10.; // ohm
+    mv_dfResistance = 10000.; // ohm
     mv_dfVoltageAcrossResistor = NAN;
     mv_dfCurrent = NAN;
   }
