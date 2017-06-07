@@ -19,19 +19,27 @@ class CCapacitor : public IDispatchComponent {
 public:
   CCapacitor(const double ac_dfCapacitance = 100. /* <uF> */ ): IDispatchComponent(sc_nPortsNo), mc_dfCapacitance(ac_dfCapacitance){
     CapLog.open(sc_CapFileName, std::ios_base::out);
-    mv_dfCapVoltage         = NAN;
-    mv_dfCurrent            = NAN;
-    mv_EquivalentResistance = NAN;
-    mv_dfPrevInputVoltage   = NAN;
-    mv_nElapsedTime         = 0;
+    mv_dfCapVoltage            = NAN;
+    mv_dfCurrent               = NAN;
+    mv_EquivalentResistance    = NAN;
+    mv_dfPreviousOutputVoltage = 0.;
+    mv_dfoutputVoltage         = 0.;
   }
 
 protected:
   virtual void Process_(DspSignalBus &inputs, DspSignalBus &outputs) override {
+
+    // inputs
     double lv_P0_VoltageIn = NAN;
     double lv_P0_CurrentIn = NAN;
     double lv_P1_VoltageIn = NAN;
     double lv_P1_CurrentIn = NAN;
+
+    // outputs
+    double lv_P0_VoltageOut = NAN;
+    double lv_P0_CurrentOut = NAN;
+    double lv_P1_VoltageOut = NAN;
+    double lv_P1_CurrentOut = NAN;
     double lv_Reader = NAN;
 
     // Read all inputs
@@ -40,12 +48,36 @@ protected:
     if (inputs.GetValue(mv_Ports[1].mv_sVoltage_IN, lv_Reader)) lv_P1_VoltageIn = lv_Reader;
     if (inputs.GetValue(mv_Ports[1].mv_sCurrent_IN, lv_Reader)) lv_P1_CurrentIn = lv_Reader;
 
-    if(!isnan(lv_P0_VoltageIn) && !isnan(lv_P1_VoltageIn))
+    if(!isnan(lv_P0_VoltageIn) && !isnan(lv_P1_VoltageIn) && !isnan(lv_P0_CurrentIn))
     {
-      // TODO: must consider current direction somehow
-      mv_dfCapVoltage = lv_P0_VoltageIn - lv_P1_VoltageIn;
+      // we should not divide by 0.
+      if(lv_P0_CurrentIn != 0.)
+        mv_EquivalentResistance = lv_P0_VoltageIn / lv_P0_CurrentIn;
+      else
+        mv_EquivalentResistance = 0.;
+
+      mv_dfCapVoltage = lv_P0_VoltageIn - lv_P1_VoltageIn; // Vth
+      mf_DoCapacitor(lv_P0_VoltageIn, lv_P1_VoltageIn, inputs, outputs);
+
+      lv_P0_VoltageOut = mv_dfoutputVoltage;
+      lv_P0_CurrentOut = mv_dfCurrent;
+      lv_P1_VoltageOut = mv_dfoutputVoltage;
+      lv_P1_CurrentOut = mv_dfCurrent;
+    }
+    else
+    {
+      lv_P0_VoltageOut = lv_P1_VoltageIn;
+      lv_P0_CurrentOut = lv_P1_CurrentIn;
+      lv_P1_VoltageOut = lv_P0_VoltageIn;
+      lv_P1_CurrentOut = lv_P0_CurrentIn;
     }
 
+    outputs.SetValue(mv_Ports[0].mv_sVoltage_OUT, lv_P0_VoltageOut);
+    outputs.SetValue(mv_Ports[0].mv_sCurrent_OUT, lv_P0_CurrentOut);
+    outputs.SetValue(mv_Ports[1].mv_sVoltage_OUT, lv_P1_VoltageOut);
+    outputs.SetValue(mv_Ports[1].mv_sCurrent_OUT, lv_P1_CurrentOut);
+
+/*
     if (!isnan(lv_P0_CurrentIn) && !isnan(lv_P0_VoltageIn)) {
       const double lc_dfVoltageDrop = 0.;
       if(lv_P0_CurrentIn != 0.) {
@@ -101,7 +133,7 @@ protected:
       outputs.SetValue(mv_Ports[0].mv_sVoltage_OUT, lv_P1_VoltageIn);
       outputs.SetValue(mv_Ports[0].mv_sCurrent_OUT, mv_dfCurrent);
       return;
-    }
+    }*/
   }
 
 private:
@@ -110,57 +142,28 @@ private:
   const double mc_dfCapacitance;
   double mv_dfCurrent;
   double mv_dfCapVoltage;
+  double mv_dfoutputVoltage;
+  double mv_dfPreviousOutputVoltage;
   double mv_dfResistance;
   double mv_EquivalentResistance;
-  double mv_dfPrevInputVoltage;
-
-  double mv_nElapsedTime;
-
-  const double mf_ComputeVoltageDrop(const double &ac_dfCurrent, const double &ac_dfVoltage)
-  {
-    mv_EquivalentResistance = ac_dfVoltage / ac_dfCurrent;
-
-    // apply the voltage divider rule
-    const double lc_dfDividerVoltage = (ac_dfVoltage * mv_dfResistance) / (mv_dfResistance + mv_EquivalentResistance);
-    const double lc_dfAdjustedCurrent = (lc_dfDividerVoltage / mv_dfResistance);
-
-    // only update the output voltage if the current is different in the downstream
-    if (ac_dfCurrent != mv_dfCurrent && lc_dfAdjustedCurrent != mv_dfCurrent) {
-      // Update the current
-      mv_dfCurrent = lc_dfAdjustedCurrent;
-      return lc_dfDividerVoltage;
-    }
-    else {
-      mv_dfCurrent = ac_dfVoltage/mv_dfResistance;
-      return ac_dfVoltage;
-    }
-  }
 
   void mf_DoCapacitor(const double ac_P0_VoltageIn, const double ac_P1_VoltageIn, DspSignalBus &inputs, DspSignalBus &outputs)
   {
-    // reset mv_nElapsedTime such that the capacitor can operate in AC mode.
-    // we do a reset when we observe a change in charging current direction
-
-    if(!isnan(ac_P0_VoltageIn))
-    {
-      if(isnan(mv_dfPrevInputVoltage))
-        mv_dfPrevInputVoltage = ac_P0_VoltageIn;
-      else if (mv_dfPrevInputVoltage - ac_P0_VoltageIn != 0) {
-        mv_dfPrevInputVoltage = ac_P0_VoltageIn;
-        mv_nElapsedTime = 0;
-      }
-    }
-
     _super::Process_(inputs, outputs);
-    mv_nElapsedTime += (!isnan(ac_P0_VoltageIn)  && !isnan(ac_P1_VoltageIn)) ? mv_nTickDuration : 0.; // ns
-    mv_dfResistance = (mv_nElapsedTime/1000) / mc_dfCapacitance;
-    //mv_dfResistance = mv_dfResistance * pow(10, -6); // back to seconds, I reckon
+    mv_dfResistance = mv_nTickDuration / mc_dfCapacitance; // dt / C = Rth
     if(!isnan(mv_dfCapVoltage))
     {
-      mv_dfCurrent = mv_dfCapVoltage / (mv_dfResistance + mv_EquivalentResistance);
+      // first trip
+      if(isnan(mv_dfPreviousOutputVoltage))
+      {
+        mv_dfPreviousOutputVoltage = 0.;//mv_dfResistance / (mv_dfResistance + mv_EquivalentResistance) * mv_dfCapVoltage; // may not be correct, better 0. ?
+      }
+      mv_dfoutputVoltage = ((mv_dfResistance / (mv_dfResistance + mv_EquivalentResistance)) * (mv_dfCapVoltage - mv_dfPreviousOutputVoltage)) + mv_dfPreviousOutputVoltage;
+      mv_dfPreviousOutputVoltage = mv_dfoutputVoltage;
+      mv_dfCurrent = -mv_dfCapVoltage / mv_dfResistance;//mv_dfoutputVoltage / (mv_dfResistance + mv_EquivalentResistance);
     }
 
-    CapLog << mv_dfResistance * mv_dfCurrent << "," << mv_dfCurrent << std::endl;
+    CapLog << /*mv_dfResistance * mv_dfCurrent*/mv_dfoutputVoltage << "," << mv_dfCurrent << std::endl;
   }
 };
 

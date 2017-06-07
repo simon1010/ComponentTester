@@ -42,8 +42,9 @@ protected:
     if (lv_bHaveMaxCurrent && !isnan(lv_dfMaxCurrent)) {
       mv_dfCurrentOut = lv_dfMaxCurrent;
     }
+    mv_tElapsedTime += mv_nTickDuration;
     _super::Process_(inputs, outputs);
-    double lv_VoltageOut = mf_dfGetSweep(mv_nTickDuration);
+    double lv_VoltageOut = mc_dfAmplitude * sin(2 * M_PI * 10 * mv_tElapsedTime * pow(10, -9));//mf_dfGetSweep(mv_nTickDuration);
 
     SweepLog << lv_VoltageOut  << "," << mv_dfCurrentOut << std::endl;
 

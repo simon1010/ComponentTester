@@ -29,11 +29,13 @@ protected:
   IDispatchComponent(const int ac_nPortCount = 1);
 
   virtual void Process_(DspSignalBus&, DspSignalBus&) override {
-    if(!mv_bMaidenTrip) {
+    if(!mv_bMaidenTrip)
+    {
       mv_bMaidenTrip = false;
       mv_nTickDuration = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - mv_LastTime).count();
     }
-    mv_LastTime = std::chrono::steady_clock::now();
+    else
+      mv_LastTime = std::chrono::steady_clock::now();
   }
 
   const string mc_sCompID;

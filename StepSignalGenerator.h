@@ -35,7 +35,7 @@ protected:
 
     // Update time with call to Super
     _super::Process_(inputs, outputs);
-    double lv_VoltageOut = mf_bOutputHigh() ? mc_dfHighVoltage : 0.;
+    double lv_VoltageOut = mf_bOutputHigh() ? mc_dfHighVoltage : 0.000000001;
 
     StepLog << lv_VoltageOut << "," << mv_dfCurrentOut << std::endl;
     outputs.SetValue(mv_Ports[0].mv_sVoltage_OUT, lv_VoltageOut);
