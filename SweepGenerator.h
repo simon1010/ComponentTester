@@ -18,8 +18,8 @@ class CSweepGenerator : public IDispatchComponent {
 public:
   CSweepGenerator(
           const double ac_dfAmplitude = 5.0         // V
-          , const double ac_dfStartFreq = 50.       // Hz
-          , const double ac_dfStopFreq = 200.       // Hz
+          , const double ac_dfStartFreq = 5.       // Hz
+          , const double ac_dfStopFreq = 500.       // Hz
           , const double ac_dfSweepDuration = 2.)   // 2s
           : mc_dfAmplitude    ( ac_dfAmplitude    )
           , mc_dfStartFreq    ( ac_dfStartFreq    )
@@ -42,9 +42,9 @@ protected:
     if (lv_bHaveMaxCurrent && !isnan(lv_dfMaxCurrent)) {
       mv_dfCurrentOut = lv_dfMaxCurrent;
     }
-    mv_tElapsedTime += mv_nTickDuration;
+    //mv_tElapsedTime += mv_nTickDuration;//194000;
     _super::Process_(inputs, outputs);
-    double lv_VoltageOut = mc_dfAmplitude * sin(2 * M_PI * 10 * mv_tElapsedTime * pow(10, -9));//mf_dfGetSweep(mv_nTickDuration);
+    double lv_VoltageOut = mf_dfGetSweep(19400);//mc_dfAmplitude * sin(2 * M_PI * 10 * mv_tElapsedTime * pow(10, -9));//mf_dfGetSweep(mv_nTickDuration);
 
     SweepLog << lv_VoltageOut  << "," << mv_dfCurrentOut << std::endl;
 

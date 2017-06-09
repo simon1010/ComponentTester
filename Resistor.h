@@ -4,27 +4,37 @@
 #include <tuple>
 #include <fstream>
 
-static const char* sc_ResFileName = "/Users/newuser/Documents/Programming/DSpatch/Logging/ResistorLog.csv";
+static const char *sc_ResFileName = "/Users/newuser/Documents/Programming/DSpatch/Logging/ResistorLog";
 std::ofstream ResLog;
 
 class CResistor : public IDispatchComponent {
   static const int sc_nPortsNo = 2;
 public:
-  CResistor() : IDispatchComponent(sc_nPortsNo) {
-    ResLog.open(sc_ResFileName, std::ios_base::out);
+  CResistor(const double ac_dfResistance = 100.) : IDispatchComponent(sc_nPortsNo) {
+    //ResLog.open(sc_ResFileName, std::ios_base::out);
 
-    mv_dfResistance = 10000.; // ohm
+    mv_dfResistance = ac_dfResistance; // ohm
     mv_dfVoltageAcrossResistor = NAN;
     mv_dfCurrent = NAN;
+    //mv_bCircuitStable = false;
   }
 
 protected:
   virtual void Process_(DspSignalBus &inputs, DspSignalBus &outputs) override {
 
+    ResLog.open(sc_ResFileName + mc_sCompID + ".csv", std::ios_base::out | std::ios_base::app);
+
+    // inputs
     double lv_P0_VoltageIn = NAN;
     double lv_P0_CurrentIn = NAN;
     double lv_P1_VoltageIn = NAN;
     double lv_P1_CurrentIn = NAN;
+
+    // outputs
+    double lv_P0_VoltageOut = NAN;
+    double lv_P0_CurrentOut = NAN;
+    double lv_P1_VoltageOut = NAN;
+    double lv_P1_CurrentOut = NAN;
     double lv_Reader = NAN;
 
     // Read all inputs
@@ -33,80 +43,63 @@ protected:
     if (inputs.GetValue(mv_Ports[1].mv_sVoltage_IN, lv_Reader)) lv_P1_VoltageIn = lv_Reader;
     if (inputs.GetValue(mv_Ports[1].mv_sCurrent_IN, lv_Reader)) lv_P1_CurrentIn = lv_Reader;
 
-    // first compute equivalent upstream resistance and voltage drop
-    if (!isnan(lv_P0_CurrentIn) && !isnan(lv_P0_VoltageIn)) {
-      const double lc_dfVoltageDrop = mf_ComputeVoltageDrop(lv_P0_CurrentIn, lv_P0_VoltageIn);
-      outputs.SetValue(mv_Ports[1].mv_sVoltage_OUT, lc_dfVoltageDrop);
-      outputs.SetValue(mv_Ports[1].mv_sCurrent_OUT, mv_dfCurrent);
-      mv_dfVoltageAcrossResistor = lc_dfVoltageDrop;
-      ResLog << "P1," << lc_dfVoltageDrop << "," << mv_dfCurrent << std::endl;
-      return;
-    }
-    else if (!isnan(lv_P1_CurrentIn) && !isnan(lv_P1_VoltageIn)) {
-      const double lc_dfVoltageDrop = mf_ComputeVoltageDrop(lv_P1_CurrentIn, lv_P1_VoltageIn);
-      outputs.SetValue(mv_Ports[0].mv_sVoltage_OUT, lc_dfVoltageDrop);
-      outputs.SetValue(mv_Ports[0].mv_sCurrent_OUT, mv_dfCurrent);
-      mv_dfVoltageAcrossResistor = lc_dfVoltageDrop;
-      ResLog << "P0," << lc_dfVoltageDrop << "," << mv_dfCurrent << std::endl;
-      return;
-    }
+    // only do calculations if lv_P0_VoltageIn && lv_P1_VoltageIn are different from their previous values
 
     if (!isnan(lv_P0_VoltageIn) && !isnan(lv_P1_VoltageIn)) {
-      const double lc_dfVoltageDifference = (lv_P0_VoltageIn - lv_P1_VoltageIn);
-      mv_dfCurrent = lc_dfVoltageDifference / mv_dfResistance;
+      mv_dfVoltageAcrossResistor = lv_P0_VoltageIn - lv_P1_VoltageIn;
+      mv_dfCurrent = mv_dfVoltageAcrossResistor / mv_dfResistance;
 
-      outputs.SetValue(mv_Ports[0].mv_sVoltage_OUT, lc_dfVoltageDifference);
-      outputs.SetValue(mv_Ports[0].mv_sCurrent_OUT, mv_dfCurrent);
-      outputs.SetValue(mv_Ports[1].mv_sVoltage_OUT, lc_dfVoltageDifference);
-      outputs.SetValue(mv_Ports[1].mv_sCurrent_OUT, mv_dfCurrent);
-      mv_dfVoltageAcrossResistor = lc_dfVoltageDifference;
-      ResLog << "P0," << lc_dfVoltageDifference << "," << mv_dfCurrent << std::endl;
-      ResLog << "P1," << lc_dfVoltageDifference << "," << mv_dfCurrent << std::endl;
-      return;
+      double lv_dfEquivResistance = NAN;
+      double lc_dfDividerVoltage = NAN;
+      if (lv_P1_CurrentIn != lv_P0_CurrentIn && !mv_bCircuitStable) {
+        if (!isnan(lv_P0_CurrentIn)) {
+          lv_dfEquivResistance = lv_P0_VoltageIn / lv_P0_CurrentIn;
+
+          // apply the voltage divider rule
+          lc_dfDividerVoltage = (lv_P0_VoltageIn * mv_dfResistance) / (mv_dfResistance + lv_dfEquivResistance);
+          mv_bCircuitStable = true;
+        } else if (!isnan(lv_P1_CurrentIn)) {
+          lv_dfEquivResistance = lv_P1_VoltageIn / lv_P1_CurrentIn;
+
+          // apply the voltage divider rule
+          lc_dfDividerVoltage = (lv_P1_VoltageIn * mv_dfResistance) / (mv_dfResistance + lv_dfEquivResistance);
+          mv_bCircuitStable = true;
+        }
+      } else if (mv_bCircuitStable) {
+        mv_bCircuitStable = false;
+      }
+      const double lc_dfAdjustedCurrent = (lc_dfDividerVoltage / mv_dfResistance);
+
+      mv_dfVoltageAcrossResistor = !isnan(lc_dfDividerVoltage) ? lc_dfDividerVoltage : mv_dfVoltageAcrossResistor;
+      mv_dfCurrent = !isnan(lc_dfAdjustedCurrent) ? lc_dfAdjustedCurrent : mv_dfCurrent;
+
+      lv_P0_VoltageOut = mv_dfVoltageAcrossResistor;
+      lv_P1_VoltageOut = mv_dfVoltageAcrossResistor;
+      lv_P0_CurrentOut = mv_dfCurrent;
+      lv_P1_CurrentOut = mv_dfCurrent;
+
+      ResLog << mv_dfVoltageAcrossResistor << "," << mv_dfCurrent << (mv_bCircuitStable ? ",true" : ",false") << std::endl;
+      ResLog.close();
+    }
+    else {
+      // make transparent
+      lv_P0_VoltageOut = lv_P1_VoltageIn;
+      lv_P0_CurrentOut = lv_P1_CurrentIn;
+      lv_P1_VoltageOut = lv_P0_VoltageIn;
+      lv_P1_CurrentOut = lv_P0_CurrentIn;
     }
 
-    // we don't do it the opposite way around so we don't create a race-condition
-    /*if(!isnan(lv_P0_VoltageIn))
-    {
-      outputs.SetValue(mv_Ports[1].mv_sVoltage_OUT, lv_P0_VoltageIn);
-      outputs.SetValue(mv_Ports[1].mv_sCurrent_OUT, mv_dfCurrent);
-      return;
-    }*/
-
-    if(!isnan(lv_P1_VoltageIn))
-    {
-      outputs.SetValue(mv_Ports[0].mv_sVoltage_OUT, lv_P1_VoltageIn);
-      outputs.SetValue(mv_Ports[0].mv_sCurrent_OUT, mv_dfCurrent);
-      return;
-    }
+    outputs.SetValue(mv_Ports[0].mv_sVoltage_OUT, lv_P0_VoltageOut);
+    outputs.SetValue(mv_Ports[0].mv_sCurrent_OUT, lv_P0_CurrentOut);
+    outputs.SetValue(mv_Ports[1].mv_sVoltage_OUT, lv_P1_VoltageOut);
+    outputs.SetValue(mv_Ports[1].mv_sCurrent_OUT, lv_P1_CurrentOut);
   }
 
 private:
-  const double mf_ComputeVoltageDrop(const double &ac_dfCurrent, const double &ac_dfVoltage);
+
 
   double mv_dfVoltageAcrossResistor;
   double mv_dfCurrent;
   double mv_dfResistance;
-  bool mv_bFlowFrom0to1; // TODO: organicity, this will update the current correctly everywhere
 };
 
-const double CResistor::mf_ComputeVoltageDrop(const double &ac_dfCurrent, const double &ac_dfVoltage) {
-  double lv_dfEquivResistance = 0.;
-  if(ac_dfCurrent != 0. && ac_dfVoltage != 0.)
-    lv_dfEquivResistance = ac_dfVoltage / ac_dfCurrent;
-
-  // apply the voltage divider rule
-  const double lc_dfDividerVoltage = (ac_dfVoltage * mv_dfResistance) / (mv_dfResistance + lv_dfEquivResistance);
-  const double lc_dfAdjustedCurrent = (lc_dfDividerVoltage / mv_dfResistance);
-
-  // only update the output voltage if the current is different in the downstream
-  if (ac_dfCurrent != mv_dfCurrent && lc_dfAdjustedCurrent != mv_dfCurrent) {
-    // Update the current
-    mv_dfCurrent = lc_dfAdjustedCurrent;
-    return lc_dfDividerVoltage;
-  }
-  else {
-    mv_dfCurrent = ac_dfVoltage/mv_dfResistance;
-    return ac_dfVoltage;
-  }
-}

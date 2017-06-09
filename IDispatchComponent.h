@@ -28,14 +28,18 @@ class IDispatchComponent : public DspComponent {
 protected:
   IDispatchComponent(const int ac_nPortCount = 1);
 
+  static bool mv_bCircuitStable;
+
   virtual void Process_(DspSignalBus&, DspSignalBus&) override {
-    if(!mv_bMaidenTrip)
+   if(!mv_bMaidenTrip)
     {
-      mv_bMaidenTrip = false;
       mv_nTickDuration = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - mv_LastTime).count();
     }
     else
-      mv_LastTime = std::chrono::steady_clock::now();
+    {
+      mv_bMaidenTrip = false;
+    }
+    mv_LastTime = std::chrono::steady_clock::now();
   }
 
   const string mc_sCompID;
@@ -49,6 +53,7 @@ public:
 };
 
 int IDispatchComponent::sv_nCompNr = 0;
+bool IDispatchComponent::mv_bCircuitStable = false;
 
 IDispatchComponent::IDispatchComponent(const int ac_nPortCount)
         : mc_sCompID([]{sv_nCompNr++;return std::to_string(sv_nCompNr);}()), mv_nTickDuration(NAN)

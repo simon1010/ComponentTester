@@ -46,13 +46,19 @@ private:
   typedef IDispatchComponent _super;
 
   bool mf_bOutputHigh() {
+
+    bool lv_bOneShot = false;
+
     mv_nCounter += (mv_nTickDuration * pow(10, -9)); // take time in seconds
     if(mv_nCounter >= mc_dfHoldOffTime) {
-      mv_nCounter = 0;
+      mv_nCounter = lv_bOneShot ? mv_nCounter : 0;
       updown = !updown;
     }
 
-    return updown;//mv_nCounter >= mc_dfHoldOffTime; //updown;
+    if(lv_bOneShot)
+      return mv_nCounter >= mc_dfHoldOffTime;
+    else
+      return updown;
   }
   bool updown;
   double mv_nCounter;

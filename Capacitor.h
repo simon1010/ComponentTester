@@ -151,8 +151,9 @@ private:
   {
     _super::Process_(inputs, outputs);
     mv_dfResistance = mv_nTickDuration / mc_dfCapacitance; // dt / C = Rth
-    if(!isnan(mv_dfCapVoltage))
+    if(!isnan(mv_dfCapVoltage) && !mv_bCircuitStable)
     {
+      mv_bCircuitStable = true;
       // first trip
       if(isnan(mv_dfPreviousOutputVoltage))
       {
@@ -161,6 +162,9 @@ private:
       mv_dfoutputVoltage = ((mv_dfResistance / (mv_dfResistance + mv_EquivalentResistance)) * (mv_dfCapVoltage - mv_dfPreviousOutputVoltage)) + mv_dfPreviousOutputVoltage;
       mv_dfPreviousOutputVoltage = mv_dfoutputVoltage;
       mv_dfCurrent = -mv_dfCapVoltage / mv_dfResistance;//mv_dfoutputVoltage / (mv_dfResistance + mv_EquivalentResistance);
+    } else if (mv_bCircuitStable)
+    {
+      mv_bCircuitStable = false;
     }
 
     CapLog << /*mv_dfResistance * mv_dfCurrent*/mv_dfoutputVoltage << "," << mv_dfCurrent << std::endl;
